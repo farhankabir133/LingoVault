@@ -1,0 +1,82 @@
+{
+  "entities": {
+    "Word": {
+      "title": "Word",
+      "description": "A vocabulary word with multi-exam context.",
+      "type": "object",
+      "properties": {
+        "word": { "type": "string" },
+        "pronunciation": { "type": "string" },
+        "part_of_speech": { "type": "string" },
+        "bn_meaning": { "type": "string" },
+        "root_word": { "type": "string" },
+        "etymology": { "type": "string" },
+        "bcs_bank_tags": { "type": "array", "items": { "type": "string" } },
+        "definitions": {
+          "type": "object",
+          "properties": {
+            "local": { "type": "string" },
+            "global": { "type": "string" }
+          }
+        },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["word", "bn_meaning", "definitions"]
+    },
+    "ContextSentence": {
+      "title": "Context Sentence",
+      "description": "A sentence showing the word in a specific flavor/context.",
+      "type": "object",
+      "properties": {
+        "flavor": { "type": "string", "enum": ["bank", "science", "academic"] },
+        "sentence": { "type": "string" },
+        "explanation": { "type": "string" }
+      },
+      "required": ["flavor", "sentence"]
+    },
+    "UserProgress": {
+      "title": "User Progress",
+      "description": "SRS state and progress for a specific word for a user.",
+      "type": "object",
+      "properties": {
+        "wordId": { "type": "string" },
+        "srs_stage": { "type": "integer" },
+        "next_review_due": { "type": "string", "format": "date-time" },
+        "accuracy_score": { "type": "number" },
+        "last_reviewed": { "type": "string", "format": "date-time" }
+      },
+      "required": ["wordId", "srs_stage", "next_review_due"]
+    },
+    "User": {
+      "title": "User",
+      "description": "A user profile in the system.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "lastLogin": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email"]
+    }
+  },
+  "firestore": {
+    "/words/{wordId}": {
+      "schema": "Word",
+      "description": "Global dictionary of words."
+    },
+    "/words/{wordId}/context_sentences/{sentenceId}": {
+      "schema": "ContextSentence",
+      "description": "Contextual sentences for a word."
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile data."
+    },
+    "/users/{userId}/progress/{wordId}": {
+      "schema": "UserProgress",
+      "description": "Individual user progress for a word."
+    }
+  }
+}

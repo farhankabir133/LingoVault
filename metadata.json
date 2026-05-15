@@ -1,0 +1,6 @@
+{
+  "name": "LingoVault AI",
+  "description": "Adaptive, AI-powered vocabulary coach for BCS, Bank, IELTS, and GRE aspirants with contextual micro-learning and active recall.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

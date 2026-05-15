@@ -1,0 +1,75 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // 1. Words Collection (Public Read for authenticated users)
+    match /words/{wordId} {
+      allow get: if isSignedIn() && isValidId(wordId);
+      allow list: if isSignedIn();
+
+      match /context_sentences/{sentenceId} {
+        allow get: if isSignedIn() && isValidId(sentenceId);
+        allow list: if isSignedIn();
+      }
+    }
+
+    // 2. User Profiles
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId);
+      allow create, update: if isOwner(userId) && isValidId(userId);
+    }
+
+    // 3. User Progress (Strictly Private)
+    match /users/{userId}/progress/{wordId} {
+      allow get, list: if isOwner(userId);
+      
+      function isValidProgress(data) {
+        return data.wordId is string &&
+               data.srs_stage is int &&
+               data.srs_stage >= 0 && data.srs_stage <= 10 &&
+               data.next_review_due is timestamp &&
+               (!('accuracy_score' in data) || (data.accuracy_score is number && data.accuracy_score >= 0 && data.accuracy_score <= 1)) &&
+               (!('last_reviewed' in data) || data.last_reviewed is timestamp);
+      }
+
+      allow create: if isOwner(userId) && 
+                      isValidId(wordId) && 
+                      isValidProgress(incoming()) &&
+                      incoming().wordId == wordId; // Ensure wordId in data matches document ID
+      
+      allow update: if isOwner(userId) && 
+                      isValidId(wordId) && 
+                      isValidProgress(incoming()) && (
+                        incoming().wordId == existing().wordId && // Immutable wordId
+                        incoming().diff(existing()).affectedKeys().hasOnly(['srs_stage', 'next_review_due', 'accuracy_score', 'last_reviewed'])
+                      );
+
+      allow delete: if isOwner(userId) && isValidId(wordId);
+    }
+  }
+}
